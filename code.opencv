@@ -1,0 +1,53 @@
+import cv2
+import numpy as np
+
+# Function to detect and track cars
+def track_cars(video_path):
+    # Create background subtractor
+    bg_subtractor = cv2.createBackgroundSubtractorMOG2()
+
+    # Open video file
+    cap = cv2.VideoCapture(video_path)
+
+    while True:
+        ret, frame = cap.read()
+
+        if not ret:
+            break
+
+        # Apply background subtraction
+        fg_mask = bg_subtractor.apply(frame)
+
+        # Apply morphological operations to remove noise
+        kernel = np.ones((5, 5), np.uint8)
+        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel, iterations=2)
+        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+        # Find contours in the foreground mask
+        contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        for contour in contours:
+            # Filter contours based on area
+            if cv2.contourArea(contour) > 500:
+                # Get bounding box for each contour
+                x, y, w, h = cv2.boundingRect(contour)
+
+                # Draw bounding box on the original frame
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        # Display the result
+        cv2.imshow('Car Tracking', frame)
+
+        # Press 'q' to exit the loop
+        if cv2.waitKey(30) & 0xFF == ord('q'):
+            break
+
+    # Release video capture object and close windows
+    cap.release()
+    cv2.destroyAllWindows()
+
+# Specify the path to your video file
+video_path = 'path/to/your/video.mp4'
+
+# Call the track_cars function with the video path
+track_cars(video_path)
